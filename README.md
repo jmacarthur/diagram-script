@@ -18,7 +18,7 @@ move(pusher, 61+61, 20)
 
 ... will produce this diagram:
 
-![Example diagram output](example_output.svg)
+![Example diagram output](example_output.png)
 
 # Intended use
 

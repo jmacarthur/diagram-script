@@ -27,10 +27,13 @@ def zorder():
 class Drawable(object):
     def svg(self):
         return "<!--- unimplemented shape --->"
+    def copy_style(self, other_shape):
+        self.style = other_shape.style
+        self.z = other_shape.z
     def copy_attributes(self, other_shape):
         self.ref_x = other_shape.ref_x
         self.ref_y = other_shape.ref_y
-        self.style = other_shape.style
+        self.copy_style(other_shape)
 
 class Polygon(Drawable):
     def __init__(self, pointsets):
@@ -66,7 +69,19 @@ class Circle(Drawable):
         for step in range(0,fn):
             angle = step*math.pi*2.0/(fn)
             points.append([self.ref_x + self.radius*math.cos(angle), self.ref_y+self.radius*math.sin(angle)])
-        return Polygon([points])
+        p = Polygon([points])
+        p.copy_style(self)
+        return p
+
+class Rect(Polygon):
+    def __init__(self, x, y, width, height):
+        self.pointsets = [[[x,y],[x+width,y],[x+width,y+height],[x,y+height]]]
+        self.ref_x = x;
+        self.ref_y = y;
+        self.z = zorder()
+        self.style = objcopy(style)
+
+Rectangle = Rect
 
 def translation(obj, x, y):
     """ Returns a copy of the original object translated by (x,y) """
@@ -116,6 +131,34 @@ def subtract(x, y):
     result = pc.Execute(pyclipper.CT_DIFFERENCE, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
     new_p = Polygon(scale_poly(result, 1.0/clipper_scale))
     new_p.copy_attributes(x)
+    return new_p
+
+def add(start, *args):
+    """ Binary geometry - union all shapes together.
+        If any shape is not a polygon, it will attempt to convert it to a
+        polygon which approximates it, using that object's to_polygon
+        method.
+    """
+    if isinstance(start,Drawable) and not isinstance(start,Polygon):
+        start = start.to_polygon()
+    print("<!-- starting object is %s -->"%(repr(start)))
+    a = deep_tuple(scale_poly(start.pointsets, clipper_scale))
+    for addition in args:
+        if isinstance(addition,Drawable) and not isinstance(addition,Polygon):
+            addition = addition.to_polygon()
+        pc = pyclipper.Pyclipper()
+        b = deep_tuple(scale_poly(addition.pointsets, clipper_scale))
+
+        print"<!--Clipping %s -->"%(repr(a))
+        print"<!--Clipping %s -->"%(repr(b))
+        print("<!-- addding is %s -->"%(repr(b)))
+
+
+        pc.AddPath(a[0], pyclipper.PT_SUBJECT, True)
+        pc.AddPath(b[0], pyclipper.PT_CLIP, True)
+        a = pc.Execute(pyclipper.CT_UNION, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
+    new_p = Polygon(scale_poly(a, 1.0/clipper_scale))
+    new_p.copy_attributes(start)
     return new_p
 
 def setstyle(**kwargs):

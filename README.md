@@ -24,7 +24,7 @@ move(pusher, 61+61, 20)
 
 This is intended to be used for people who need to make simple diagrams but prefer to write scripts rather than use a graphical user interface.
 
-diagram-script is meant for illustrative diagrams. If you want to make CAD files, the excellent [OpenSCAD][http://www.openscad.org/] is better suited.
+diagram-script is meant for illustrative diagrams. If you want to make CAD files, the excellent [OpenSCAD](http://www.openscad.org/) is better suited.
 
 # Usage
 

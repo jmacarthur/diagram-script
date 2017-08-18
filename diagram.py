@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import header
 import math
 import pyclipper
 import sys
@@ -183,7 +184,8 @@ def main():
     locals = dict()
     globs = globals()
     exec(code, globs, locals)
-    print "<svg width=\"297\" height=\"210\" viewPort=\"0 0 297 210\" >"
+    print header.svg_header
+    print "width=\"297\" height=\"210\" viewPort=\"0 0 297 210\" >"
     for l in locals:
         print "<!-- %s -->"%l
         if l[0] != "_" and isinstance(locals[l], Drawable):

@@ -10,4 +10,10 @@ _slot1 = add(Circle(10,10,5), Rect(10,5,20,10), Circle(30,10,5))
 pusher = subtract(_pusher, _slot1)
 move(pusher, 61+61, 10)
 setstyle(fill_opacity=0.5)
-driverod = add(Circle(0,20,10),Rect(0,10,120,20),Circle(120,20,10))
+driverod_length = 180
+driverod = subtract(
+	 add(Circle(0,20,10),Rect(0,10,driverod_length,20),Circle(driverod_length,20,10)),
+	 Circle(0,20,3),
+	 Circle(50,20,3),
+	 Circle(100,20,3))
+move(driverod, -20,0)

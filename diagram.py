@@ -11,7 +11,6 @@ style = {"stroke":"black", "fill":"green", "fill-opacity":"1", "stroke-opacity":
 z = 0
 clipper_scale = 1000
 
-
 def convert_style(style_dict):
     """ Converts a dictionary which contains style settings into a string suitable for use in SVG. """
     style_text = ""
@@ -111,56 +110,34 @@ def scale_poly(poly, scale):
     if type(poly) != list: return poly*scale
     return list(scale_poly(p, scale) for p in poly)
 
-def subtract(x, y):
-    """ Binary geometry - cuts out the object y from the polygon object x.
-        If y is not a polygon, it will attempt to convert it to a
-        polygon which approximates it, using that object's to_polygon
-        method.
-    """
-    if isinstance(y,Drawable) and not isinstance(y,Polygon):
-        y = y.to_polygon()
-    pc = pyclipper.Pyclipper()
-    a = deep_tuple(scale_poly(x.pointsets, clipper_scale))
-    b = deep_tuple(scale_poly(y.pointsets, clipper_scale))
+def binops(start, operation, *args):
+    """ Binary geometry - perform the operation on start and args[0], then
+        the result of that with args[1], etc.  If any shape is not a
+        polygon, it will attempt to convert it to a polygon which
+        approximates it, using that object's to_polygon method.
 
-    print"<!--Clipping %s -->"%(repr(a))
-    print"<!--Clipping %s -->"%(repr(b))
-
-
-    pc.AddPath(a[0], pyclipper.PT_SUBJECT, True)
-    pc.AddPath(b[0], pyclipper.PT_CLIP, True)
-    result = pc.Execute(pyclipper.CT_DIFFERENCE, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
-    new_p = Polygon(scale_poly(result, 1.0/clipper_scale))
-    new_p.copy_attributes(x)
-    return new_p
-
-def add(start, *args):
-    """ Binary geometry - union all shapes together.
-        If any shape is not a polygon, it will attempt to convert it to a
-        polygon which approximates it, using that object's to_polygon
-        method.
     """
     if isinstance(start,Drawable) and not isinstance(start,Polygon):
         start = start.to_polygon()
-    print("<!-- starting object is %s -->"%(repr(start)))
     a = deep_tuple(scale_poly(start.pointsets, clipper_scale))
-    for addition in args:
-        if isinstance(addition,Drawable) and not isinstance(addition,Polygon):
-            addition = addition.to_polygon()
+    for rhs in args:
+        if isinstance(rhs,Drawable) and not isinstance(rhs,Polygon):
+            rhs = rhs.to_polygon()
         pc = pyclipper.Pyclipper()
-        b = deep_tuple(scale_poly(addition.pointsets, clipper_scale))
+        b = deep_tuple(scale_poly(rhs.pointsets, clipper_scale))
 
-        print"<!--Clipping %s -->"%(repr(a))
-        print"<!--Clipping %s -->"%(repr(b))
-        print("<!-- addding is %s -->"%(repr(b)))
-
-
-        pc.AddPath(a[0], pyclipper.PT_SUBJECT, True)
-        pc.AddPath(b[0], pyclipper.PT_CLIP, True)
-        a = pc.Execute(pyclipper.CT_UNION, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
+        pc.AddPaths(a, pyclipper.PT_SUBJECT, True)
+        pc.AddPaths(b, pyclipper.PT_CLIP, True)
+        a = pc.Execute(operation, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
     new_p = Polygon(scale_poly(a, 1.0/clipper_scale))
     new_p.copy_attributes(start)
     return new_p
+
+def add(start, *args):
+    return binops(start, pyclipper.CT_UNION, *args)
+
+def subtract(start, *args):
+    return binops(start, pyclipper.CT_DIFFERENCE, *args)
 
 def setstyle(**kwargs):
     """ Set any number of style arguments in the global style variable.
